@@ -1,0 +1,12 @@
+package ${package};
+
+/**
+ * Entry point for assertions of different data types. Each method in this class is a static factory for the
+ * type-specific assertion objects.
+ */
+public class Assertions extends org.assertj.core.api.Assertions {
+${all_assertions_entry_points}
+  protected Assertions() {
+    // empty
+  }
+}

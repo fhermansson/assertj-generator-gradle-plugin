@@ -1,0 +1,48 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "com.gradle.publish:plugin-publish-plugin:0.9.5"
+    }
+}
+
+apply plugin: "com.gradle.plugin-publish"
+
+group 'com.github.fhermansson'
+version '1.0'
+
+apply plugin: 'groovy'
+apply plugin: 'maven'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+    compile ('org.assertj:assertj-assertions-generator:2.0.0') {
+        exclude module: 'logback-classic'
+    }
+}
+
+pluginBundle {
+    website = 'https://github.com/fhermansson/assertj-generator-gradle-plugin'
+    vcsUrl = 'https://github.com/fhermansson/assertj-generator-gradle-plugin'
+    description = 'Generate Assertj assertion classes.'
+    tags = ['code-generation', 'assertj', 'java']
+
+    plugins {
+        assertjGenerator {
+            id = 'com.github.fhermansson.assertj-generator'
+            displayName = 'Assertj Generator plugin'
+        }
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.12'
+}
