@@ -19,8 +19,10 @@ class AssertjGenerator implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
+        project.configure(project) {
+            apply plugin: 'java'
+        }
         project.extensions.create 'assertjGenerator', AssertjGeneratorConfiguration;
-
         defineCleanAssertionsTask(project)
         defineGenerateAssertionsTask(project)
     }

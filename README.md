@@ -8,7 +8,7 @@ The task `generateAssertions` will  run after `compileJava` and before `compileT
 ####Configuration
 ```groovy
 plugins {
-  id "com.github.fhermansson.assertj-generator" version "1.0"
+  id "com.github.fhermansson.assertj-generator" version "1.0.1"
 }
 
 assertjGenerator {
