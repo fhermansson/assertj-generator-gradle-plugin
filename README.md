@@ -1,11 +1,11 @@
-###Assertj assertions generator gradle plugin
+### Assertj assertions generator gradle plugin
 
 A gradle plugin with task to generate assertions using [AssertJ Assertions Generator](http://joel-costigliola.github.io/assertj/assertj-assertions-generator.html).
 
 The task `generateAssertions` will  run after `compileJava` and before `compileTestJava`
 
 
-####Configuration
+#### Configuration
 ```groovy
 plugins {
   id "com.github.fhermansson.assertj-generator" version "1.0.1"
@@ -16,7 +16,7 @@ assertjGenerator {
 }
 ```
 
-#####Properties
+##### Properties
 
 | Property | Type | Default | Description |
 | -------- | ---- | ------- | ------------|
