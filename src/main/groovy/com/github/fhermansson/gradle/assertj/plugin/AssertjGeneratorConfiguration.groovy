@@ -4,34 +4,34 @@ class AssertjGeneratorConfiguration {
     /**
      * Classes and packages to generate assertions for
      */
-    String[] classOrPackageNames = {};
+    String[] classOrPackageNames = {}
     /**
      * Destination package for entry poit classes. The generator will choose if null
      */
-    String entryPointPackage;
+    String entryPointPackage
     /**
      * Output directory for generated classes
      */
-    File outputDir = new File('src/test/generated-java');
+    String outputDir = 'src/test/generated-java'
     /**
      * Generate Assertions entry point class
      */
-    boolean standard = true;
+    boolean standard = true
     /**
      * Generate SoftAssertions entry point class
      */
-    boolean soft = true;
+    boolean soft = true
     /**
      * Generate BddAssertions entry point class
      */
-    boolean bdd = false;
+    boolean bdd = false
     /**
      * Generate JunitSoftAssertions entry point class
      */
-    boolean junit_soft = false;
+    boolean junit_soft = false
     /**
      * Entry point classes inherit from core Assertj classes
      */
-    boolean entryPointInherits = true;
+    boolean entryPointInherits = true
 }
 
