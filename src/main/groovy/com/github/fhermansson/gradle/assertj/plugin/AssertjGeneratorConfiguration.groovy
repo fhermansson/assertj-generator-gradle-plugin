@@ -12,7 +12,7 @@ class AssertjGeneratorConfiguration {
     /**
      * Output directory for generated classes
      */
-    String outputDir = 'src/test/generated-java'
+    File outputDir = new File('src/test/generated-java')
     /**
      * Generate Assertions entry point class
      */

@@ -28,14 +28,16 @@ class AssertjGenerator implements Plugin<Project> {
     }
 
     private void defineGenerateAssertionsTask(Project project) {
-        project.task(dependsOn: ['cleanAssertions', 'compileJava'], 'generateAssertions') {
+        project.task(dependsOn: ['compileJava'], 'generateAssertions') {
             description = 'Generate Assertj Assertions'
             doFirst {
+                this.clean(project)
+            }
+            doLast {
 
                 AssertjGeneratorConfiguration conf = project.assertjGenerator
-
                 BaseAssertionGenerator baseAssertionGenerator = new BaseAssertionGenerator()
-                baseAssertionGenerator.directoryWhereAssertionFilesAreGenerated = new File(project.projectDir, conf.outputDir).getAbsolutePath()
+                baseAssertionGenerator.directoryWhereAssertionFilesAreGenerated = project.file(conf.outputDir).getAbsolutePath()
 
                 if (conf.entryPointInherits) {
                     baseAssertionGenerator.register(AssertjTemplates.getStandardTemplate())
@@ -75,7 +77,7 @@ class AssertjGenerator implements Plugin<Project> {
 
     private void defineCleanAssertionsTask(Project project) {
         project.task(type: Delete, 'cleanAssertions') {
-            doLast() {
+            doLast {
                 this.clean(project)
             }
         }
