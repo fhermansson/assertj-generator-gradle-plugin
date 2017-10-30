@@ -15,14 +15,14 @@ import static java.util.stream.Collectors.toSet
 
 class AssertjGenerator implements Plugin<Project> {
 
-    private static ClassToClassDescriptionConverter classDescriptionConverter = new ClassToClassDescriptionConverter();
+    private static ClassToClassDescriptionConverter classDescriptionConverter = new ClassToClassDescriptionConverter()
 
     @Override
     void apply(Project project) {
         project.configure(project) {
             apply plugin: 'java'
         }
-        project.extensions.create 'assertjGenerator', AssertjGeneratorConfiguration;
+        project.extensions.create 'assertjGenerator', AssertjGeneratorConfiguration
         defineCleanAssertionsTask(project)
         defineGenerateAssertionsTask(project)
     }
@@ -32,40 +32,40 @@ class AssertjGenerator implements Plugin<Project> {
             description = 'Generate Assertj Assertions'
             doFirst {
 
-                AssertjGeneratorConfiguration conf = project.assertjGenerator;
+                AssertjGeneratorConfiguration conf = project.assertjGenerator
 
-                BaseAssertionGenerator baseAssertionGenerator = new BaseAssertionGenerator();
-                baseAssertionGenerator.directoryWhereAssertionFilesAreGenerated = conf.outputDir;
+                BaseAssertionGenerator baseAssertionGenerator = new BaseAssertionGenerator()
+                baseAssertionGenerator.directoryWhereAssertionFilesAreGenerated = new File(project.projectDir, conf.outputDir).getAbsolutePath()
 
                 if (conf.entryPointInherits) {
-                    baseAssertionGenerator.register(AssertjTemplates.getStandardTemplate());
-                    baseAssertionGenerator.register(AssertjTemplates.getSoftTemplate());
-                    baseAssertionGenerator.register(AssertjTemplates.getJunitSoftTemplate());
-                    baseAssertionGenerator.register(AssertjTemplates.getBddTemplate());
+                    baseAssertionGenerator.register(AssertjTemplates.getStandardTemplate())
+                    baseAssertionGenerator.register(AssertjTemplates.getSoftTemplate())
+                    baseAssertionGenerator.register(AssertjTemplates.getJunitSoftTemplate())
+                    baseAssertionGenerator.register(AssertjTemplates.getBddTemplate())
                 }
 
                 def classLoader = new URLClassLoader(project.sourceSets.main.runtimeClasspath.collect { it.toURI().toURL() } as URL[])
-                def classes = ClassUtil.collectClasses(classLoader, conf.classOrPackageNames);
+                def classes = ClassUtil.collectClasses(classLoader, conf.classOrPackageNames)
 
                 Set<ClassDescription> classDescriptions = classes.stream()
                         .map { classDescriptionConverter.convertToClassDescription(it) }
-                        .collect(toSet());
+                        .collect(toSet())
 
                 def generated = classDescriptions.stream()
                         .map { baseAssertionGenerator.generateCustomAssertionFor(it) }
-                        .collect(toSet());
+                        .collect(toSet())
 
-                def entryPoints = Collections.emptySet();
+                def entryPoints = Collections.emptySet()
 
                 if (!generated.isEmpty()) {
                     entryPoints = Stream.of(AssertionsEntryPointType.values())
                             .filter { conf[it.name().toLowerCase()] }
                             .map { baseAssertionGenerator.generateAssertionsEntryPointClassFor(classDescriptions, it, conf.entryPointPackage) }
-                            .collect(toSet());
+                            .collect(toSet())
                 }
 
 
-                println "Generated ${generated.size()} assertion classes, ${entryPoints.size()} entry point classes in ${conf.outputDir}"
+                logger.lifecycle "Generated ${generated.size()} assertion classes, ${entryPoints.size()} entry point classes in ${conf.outputDir}"
             }
         }
 
@@ -74,8 +74,10 @@ class AssertjGenerator implements Plugin<Project> {
     }
 
     private void defineCleanAssertionsTask(Project project) {
-        project.task(type: Delete, 'cleanAssertions') << {
-            this.clean(project)
+        project.task(type: Delete, 'cleanAssertions') {
+            doLast() {
+                this.clean(project)
+            }
         }
 
         project.clean.doFirst {
