@@ -71,6 +71,8 @@ class AssertjGenerator implements Plugin<Project> {
             }
         }
 
+        projekt.tasks.cleanAssertions.mustRunAfter compileJava
+
         project.compileTestJava.dependsOn('generateAssertions')
         project.sourceSets.test.java.srcDirs += project.assertjGenerator.outputDir
     }
