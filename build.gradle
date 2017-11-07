@@ -1,34 +1,54 @@
 buildscript {
+    ext.kotlin_version = '1.1.51'
+    ext.dokka_version = '0.9.15'
+
     repositories {
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
+        jcenter()
     }
     dependencies {
-        classpath "com.gradle.publish:plugin-publish-plugin:0.9.9"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.jetbrains.dokka:dokka-gradle-plugin:${dokka_version}"
     }
 }
 
-apply plugin: "com.gradle.plugin-publish"
+plugins {
+    id 'java-gradle-plugin'
+    id "com.gradle.plugin-publish" version "0.9.9"
+}
 
 group 'com.github.fhermansson'
-version '1.0.3'
+version '1.1.0'
 
-apply plugin: 'groovy'
+apply plugin: 'kotlin'
 apply plugin: 'maven'
+apply plugin: 'org.jetbrains.dokka'
+
+sourceCompatibility = 1.8
 
 repositories {
     jcenter()
 }
 
 dependencies {
-    compile gradleApi()
-    compile localGroovy()
-    compile ('org.assertj:assertj-assertions-generator:2.0.0') {
+    implementation("org.assertj:assertj-assertions-generator:2.0.0") {
         exclude module: 'logback-classic'
     }
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
 }
 
+dokka {
+    outputFormat = "javadoc"
+    outputDirectory = "$buildDir/javadoc"
+}
+
+gradlePlugin {
+    plugins {
+        assertjGenerator {
+            id = 'com.github.fhermansson.assertj-generator'
+            implementationClass = 'com.github.fhermansson.gradle.assertj.plugin.AssertjGeneratorPlugin'
+        }
+    }
+}
 pluginBundle {
     website = 'https://github.com/fhermansson/assertj-generator-gradle-plugin'
     vcsUrl = 'https://github.com/fhermansson/assertj-generator-gradle-plugin'
@@ -43,6 +63,22 @@ pluginBundle {
     }
 }
 
+
+task dokkaJar(type: Jar) {
+    group = 'documentation'
+    classifier = 'javadoc'
+    from(dokka)
+}
+install.dependsOn dokkaJar
+publishPlugins.dependsOn dokkaJar
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.12'
+    gradleVersion = '4.3'
 }

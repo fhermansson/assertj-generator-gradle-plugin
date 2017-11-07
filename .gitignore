@@ -19,3 +19,4 @@ gradle-app.setting
 *.ipr
 *.iws
 *.iml
+out
