@@ -24,7 +24,7 @@ open class AssertjGeneratorExtension {
      * Output directory for generated classes.
      * Any type accepted by Project.file(Object).
      */
-    var outputDir: Any = "src/test/generated-java"
+    var outputDir: Any? = null
     /**
      * What kinds of entry point classes to generate.
      */

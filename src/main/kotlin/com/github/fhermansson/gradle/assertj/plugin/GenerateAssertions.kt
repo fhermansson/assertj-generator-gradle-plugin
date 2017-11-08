@@ -27,9 +27,9 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
      */
     var entryPointTypes: Array<AssertionsEntryPointType>? = null
         @Internal
-        get() = if (field != null) field else extension.entryPointTypes
+        get() = field ?: extension.entryPointTypes
 
-    val entryPointTypesAsSet
+    private val entryPointTypesAsSet
         @Input
         get() = entryPointTypes!!.toSet()
     /**
@@ -37,10 +37,10 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
      * Any type accepted by Project.file(Object).
      */
     var outputDir: Any? = null
-        @Internal
-        get() = if (field != null) field else extension.outputDir
+        @Input
+        get() = field ?: extension.outputDir ?: "src/$testSourceSetName/generated-java"
 
-    val resolvedOutputDir: File
+    private val resolvedOutputDir: File
         @OutputDirectory
         get() = project.file(outputDir!!)
 
@@ -49,14 +49,14 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
      */
     var sourceSetName: String? = null
         @Input
-        get() = if (field != null) field else extension.sourceSetName
+        get() = field ?: extension.sourceSetName
 
     /**
      * The name of the target sourceSet for generated assertions.
      */
     var testSourceSetName: String? = null
         @Input
-        get() = if (field != null) field else extension.testSourceSetName
+        get() = field ?: extension.testSourceSetName
 
     /**
      * Destination package for entry point classes. The generator will choose if null.
@@ -64,28 +64,28 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
     var entryPointPackage: String? = null
         @Input
         @Optional
-        get() = if (field != null) field else extension.entryPointPackage
+        get() = field ?: extension.entryPointPackage
 
     /**
      * Entry point classes inherit from core Assertj classes
      */
     var entryPointInherits: Boolean? = null
         @Input
-        get() = if (field != null) field else extension.entryPointInherits
+        get() = field ?: extension.entryPointInherits
 
     /**
      * Classes and packages to generate assertions for.
      */
     var classOrPackageNames: Array<String>? = null
         @Input
-        get() = if (field != null) field else extension.classOrPackageNames
+        get() = field ?: extension.classOrPackageNames
 
     /**
      * Clean output directory before generating assertions.
      */
     var cleanOutputDir: Boolean? = null
         @Input
-        get() = if (field != null) field else extension.cleanOutputDir
+        get() = field ?: extension.cleanOutputDir
 
     init {
         group = "assertj"
@@ -95,7 +95,7 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
 
     @InputFiles
     @CompileClasspath
-    fun getClassPath(): FileCollection {
+    private fun getClassPath(): FileCollection {
         return sourceSetByName(sourceSetName!!).runtimeClasspath
     }
 

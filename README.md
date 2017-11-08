@@ -26,7 +26,7 @@ type `com.github.fhermansson.gradle.assertj.plugin.GenerateAssertions`.
 | -------- | ---- | ------- | ------------|
 |classOrPackageNames|String[]|[]|Class or package names you want to generate assertions for|
 |entryPointPackage|String|null|Destination package for entry point classes. The generator will choose if null|
-|outputDir|Object|src/test/generated-java|Where to put the generated classes. Will be resolved with project.file(outputDir)|
+|outputDir|Object|src/[testSourceSetName]/generated-java|Where to put the generated classes. Will be resolved with project.file(outputDir)|
 |sourceSetName|String|main|The sourceSet containing classes that assertions should be generated for. This task will depend on the `classes` task for this sourceSet.|
 |testSourceSetName|String|test|The target sourceSet for assertions. `outputDir` will be added to the srcDirs of this sourceSet, and the `compileJava` task for the sourceSet will depend on this task.|
 |entryPointTypes|AssertionsEntryPointType[]|['STANDARD']|Types of entry point classes to generate. Possible values: 'STANDARD', 'SOFT', 'BDD', 'JUNIT_SOFT'|
@@ -51,7 +51,6 @@ task generateOtherAssertions(type: GenerateAssertions) {
      classOrPackageNames = ['com.other.model']
      sourceSetName = 'other'
      testSourceSetName = 'otherTest'
-     outputDir = 'src/otherTest/assertions'
  }
 
 ```
