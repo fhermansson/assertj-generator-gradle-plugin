@@ -10,18 +10,29 @@ import org.gradle.api.Project
 import org.gradle.api.ProjectEvaluationListener
 import org.gradle.api.ProjectState
 import org.gradle.api.file.FileCollection
-import org.gradle.api.plugins.JavaPluginConvention
-import org.gradle.api.tasks.*
+import org.gradle.api.tasks.CompileClasspath
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.SourceSet
+import org.gradle.api.tasks.TaskAction
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import java.io.File
 import java.net.URLClassLoader
 
 open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
 
-    private val extension: AssertjGeneratorExtension
-        @Internal
-        get() = project.extensions.getByType(AssertjGeneratorExtension::class.java)
+    @get:Internal
+    private val extension: AssertjGeneratorExtension by lazy {
+        project.extensions.getByType(AssertjGeneratorExtension::class.java)
+    }
 
+    private val classPath: FileCollection
+        @InputFiles
+        @CompileClasspath
+        get() = sourceSet!!.runtimeClasspath
     /**
      * What kinds of entry point classes to generate.
      */
@@ -38,25 +49,25 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
      */
     var outputDir: Any? = null
         @Input
-        get() = field ?: extension.outputDir ?: "src/$testSourceSetName/generated-java"
+        get() = field ?: extension.outputDir ?: "src/${testSourceSet!!.name}/generated-java"
 
     private val resolvedOutputDir: File
         @OutputDirectory
         get() = project.file(outputDir!!)
 
     /**
-     * The name of the sourceSet containing classes to generate assertions for.
+     * The sourceSet containing classes to generate assertions for.
      */
-    var sourceSetName: String? = null
+    var sourceSet: SourceSet? = null
         @Input
-        get() = field ?: extension.sourceSetName
+        get() = field ?: extension.sourceSet
 
     /**
-     * The name of the target sourceSet for generated assertions.
+     * The target sourceSet for generated assertions.
      */
-    var testSourceSetName: String? = null
+    var testSourceSet: SourceSet? = null
         @Input
-        get() = field ?: extension.testSourceSetName
+        get() = field ?: extension.testSourceSet
 
     /**
      * Destination package for entry point classes. The generator will choose if null.
@@ -93,17 +104,6 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
         project.gradle.addProjectEvaluationListener(this)
     }
 
-    @InputFiles
-    @CompileClasspath
-    private fun getClassPath(): FileCollection {
-        return sourceSetByName(sourceSetName!!).runtimeClasspath
-    }
-
-    private fun sourceSetByName(name: String): SourceSet {
-        val javaPluginConvention = project.convention.getPlugin(JavaPluginConvention::class.java)
-        return javaPluginConvention.sourceSets.getByName(name)
-    }
-
     private fun getTemplate(entryPointType: AssertionsEntryPointType): Template {
         val templateType = when (entryPointType) {
             AssertionsEntryPointType.STANDARD -> Template.Type.ASSERTIONS_ENTRY_POINT_CLASS
@@ -117,23 +117,23 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
         return Template(templateType, templateContent)
     }
 
-    override fun afterEvaluate(project: Project?, state: ProjectState?) {
-        val sourceClassesTaskName = sourceSetByName(sourceSetName!!).classesTaskName
-        dependsOn.add(sourceClassesTaskName)
-        val testSourceSet = sourceSetByName(testSourceSetName!!)
-        testSourceSet.java.srcDir(resolvedOutputDir)
-        this.project.getTasksByName(testSourceSet.compileJavaTaskName, false).forEach {
-            it.dependsOn(this)
-        }
-        val idea = this.project.extensions.findByType(IdeaModel::class.java)
-        if (idea !== null) {
-            idea.module.generatedSourceDirs.add(resolvedOutputDir)
+    override fun afterEvaluate(project: Project, state: ProjectState) {
+        if (project == this.project) {
+            val sourceClassesTaskName = sourceSet!!.classesTaskName
+            dependsOn.add(sourceClassesTaskName)
+            testSourceSet!!.java.srcDir(resolvedOutputDir)
+            listOf("java", "kotlin", "groovy").forEach {
+                project.getTasksByName(testSourceSet!!.getCompileTaskName(it), false).forEach {
+                    it.dependsOn(this)
+                }
+            }
+            project.extensions.findByType(IdeaModel::class.java)
+                ?.module?.generatedSourceDirs?.add(resolvedOutputDir)
         }
     }
 
     override fun beforeEvaluate(project: Project?) {
     }
-
 
     @TaskAction
     fun generateAssertions() {
@@ -148,22 +148,20 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
                 assertionGenerator.register(getTemplate(it))
             }
         }
-        val classLoader = URLClassLoader(getClassPath().map { it.toURI().toURL() }.toTypedArray())
+        val classLoader = URLClassLoader(classPath.map { it.toURI().toURL() }.toTypedArray())
         val classes = ClassUtil.collectClasses(classLoader, *classOrPackageNames!!)
         val classDescriptions = classes.map { descriptionConverter.convertToClassDescription(it) }.toSet()
         val generatedAssertions = classDescriptions.map { assertionGenerator.generateCustomAssertionFor(it) }.toSet()
 
         val entryPoints =
-                if (generatedAssertions.isEmpty())
-                    emptySet<File>()
-                else
-                    entryPointTypesAsSet.map {
-                        assertionGenerator.generateAssertionsEntryPointClassFor(classDescriptions, it, entryPointPackage)
-                    }.toSet()
+            if (generatedAssertions.isEmpty())
+                emptySet<File>()
+            else
+                entryPointTypesAsSet.map {
+                    assertionGenerator.generateAssertionsEntryPointClassFor(classDescriptions, it, entryPointPackage)
+                }.toSet()
 
         logger.lifecycle("Generated ${generatedAssertions.size} assertion classes, " +
-                "${entryPoints.size} entry point classes in ${resolvedOutputDir}")
-
+            "${entryPoints.size} entry point classes in $resolvedOutputDir")
     }
-
 }
