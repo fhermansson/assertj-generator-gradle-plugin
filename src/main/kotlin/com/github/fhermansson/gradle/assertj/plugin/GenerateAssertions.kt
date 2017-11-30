@@ -59,14 +59,12 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
      * The sourceSet containing classes to generate assertions for.
      */
     var sourceSet: SourceSet? = null
-        @Input
         get() = field ?: extension.sourceSet
 
     /**
      * The target sourceSet for generated assertions.
      */
     var testSourceSet: SourceSet? = null
-        @Input
         get() = field ?: extension.testSourceSet
 
     /**
