@@ -2,7 +2,7 @@ package com.github.fhermansson.gradle.assertj.plugin
 
 import org.assertj.assertions.generator.AssertionsEntryPointType
 import org.gradle.api.Project
-import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.SourceSet
 
 open class AssertjGeneratorExtension(project: Project) {
@@ -14,14 +14,14 @@ open class AssertjGeneratorExtension(project: Project) {
     /**
      * The sourceSet containing classes to generate assertions for.
      */
-    var sourceSet: SourceSet = project.convention.getPlugin(JavaPluginConvention::class.java)
-            .sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME)
+    var sourceSet: SourceSet = project.extensions.getByType(JavaPluginExtension::class.java)
+        .sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME)
 
     /**
      * The target sourceSet for generated assertions.
      */
-    var testSourceSet: SourceSet = project.convention.getPlugin(JavaPluginConvention::class.java)
-            .sourceSets.getByName(SourceSet.TEST_SOURCE_SET_NAME)
+    var testSourceSet: SourceSet = project.extensions.getByType(JavaPluginExtension::class.java)
+        .sourceSets.getByName(SourceSet.TEST_SOURCE_SET_NAME)
 
     /**
      * Destination package for entry point classes. The generator will choose if null.
@@ -47,5 +47,5 @@ open class AssertjGeneratorExtension(project: Project) {
     /**
      * Clean output directory before generating assertions.
      */
-    val cleanOutputDir: Boolean = true
+    var cleanOutputDir: Boolean = true
 }

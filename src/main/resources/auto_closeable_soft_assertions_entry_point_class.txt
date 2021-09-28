@@ -1,0 +1,9 @@
+package ${package};
+
+/**
+* Entry point for assertions of different data types. Each method in this class is a static factory for the
+* type-specific assertion objects.
+*/
+public class AutoCloseableSoftAssertions extends org.assertj.core.api.AutoCloseableSoftAssertions {
+${all_assertions_entry_points}
+}
