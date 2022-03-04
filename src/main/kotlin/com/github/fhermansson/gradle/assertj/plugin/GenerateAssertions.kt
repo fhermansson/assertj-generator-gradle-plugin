@@ -154,6 +154,8 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
         }
         val classLoader = URLClassLoader(classPath.map { it.toURI().toURL() }.toTypedArray())
         val classes = ClassUtil.collectClasses(classLoader, *classOrPackageNames!!)
+            .filterNot { it.rawType.isSynthetic }
+
         val classDescriptions = classes.map { descriptionConverter.convertToClassDescription(it) }.toSet()
         val generatedAssertions = classDescriptions.map { assertionGenerator.generateCustomAssertionFor(it) }.toSet()
 
