@@ -48,4 +48,9 @@ open class AssertjGeneratorExtension(project: Project) {
      * Clean output directory before generating assertions.
      */
     var cleanOutputDir: Boolean = true
+
+    /**
+     * Consider not public properties and fields.
+     */
+    var privateFields: Boolean = false
 }

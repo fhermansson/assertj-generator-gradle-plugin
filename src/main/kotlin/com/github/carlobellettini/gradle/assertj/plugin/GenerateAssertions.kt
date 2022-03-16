@@ -97,6 +97,10 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
         @Input
         get() = field ?: extension.cleanOutputDir
 
+    var privateFields: Boolean? = null
+        @Input
+        get() = field ?: extension.privateFields
+
     init {
         group = "assertj"
         description = "Generate Assertj Assertions"
@@ -146,7 +150,9 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
         }
         val descriptionConverter = ClassToClassDescriptionConverter()
         val assertionGenerator = BaseAssertionGenerator()
-        assertionGenerator.setDirectoryWhereAssertionFilesAreGenerated(resolvedOutputDir)
+        if (privateFields == true) // not (false or null)
+            assertionGenerator.setGenerateAssertionsForAllFields(true)
+        assertionGenerator.setDirectoryWhereAssertionFilesAreGenerated(File(resolvedOutputDir.absolutePath))
         if (entryPointInherits!!) {
             entryPointTypesAsSet.forEach {
                 assertionGenerator.register(getTemplate(it))
