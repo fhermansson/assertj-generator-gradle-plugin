@@ -9,7 +9,7 @@ Gradle version >= 7.1
 #### Configuration
 ```groovy
 plugins {
-  id "com.github.fhermansson.assertj-generator" version "1.1.3"
+  id "com.github.fhermansson.assertj-generator" version "1.1.5"
 }
 
 assertjGenerator {
@@ -33,6 +33,7 @@ type `com.github.fhermansson.gradle.assertj.plugin.GenerateAssertions`.
 |entryPointTypes|AssertionsEntryPointType[]|['STANDARD']|Types of entry point classes to generate. Possible values: 'STANDARD', 'SOFT', 'BDD', 'JUNIT_SOFT', 'BDD_SOFT', 'JUNIT_BDD_SOFT', 'AUTO_CLOSEABLE_SOFT', 'AUTO_CLOSEABLE_BDD_SOFT'|
 |entryPointInherits|boolean|true|Entry point classes [inherit](http://joel-costigliola.github.io/assertj/assertj-core-custom-assertions.html#single-assertion-entry-point) from core Assertj classes|
 |cleanOutputDir|boolean|true|Remove all files in `outputDir` before generating assertions.|
+|privateFields|boolean|false|Generate assertions for not public properties and fields|
 
 
 ##### How to create additional tasks
@@ -53,6 +54,5 @@ task generateOtherAssertions(type: GenerateAssertions) {
      sourceSet = sourceSets.other
      testSourceSet = sourceSets.otherTest
  }
-
 ```
 
