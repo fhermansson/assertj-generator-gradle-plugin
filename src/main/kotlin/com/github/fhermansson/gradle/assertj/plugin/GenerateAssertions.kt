@@ -21,6 +21,7 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import java.io.File
 import java.net.URLClassLoader
+import kotlin.math.log
 
 open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
 
@@ -32,6 +33,7 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
         @InputFiles
         @CompileClasspath
         get() = sourceSet!!.runtimeClasspath
+
     /**
      * What kinds of entry point classes to generate.
      */
@@ -42,6 +44,7 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
     val entryPointTypesAsSet
         @Input
         get() = entryPointTypes!!.toSet()
+
     /**
      * Output directory for generated classes.
      * Any type accepted by Project.file(Object).
@@ -96,6 +99,20 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
     var cleanOutputDir: Boolean? = null
         @Input
         get() = field ?: extension.cleanOutputDir
+
+    /**
+     * Regexes for classes to be excluded
+     */
+    var excludes: Array<String>? = null
+        @Input
+        get() = field ?: extension.excludes
+
+    /**
+     * Use @jakarta.annotation.Generated instead of @javax.annotation.Generated
+     */
+    var useJakartaAnnotations: Boolean? = null
+        @Input
+        get() = field ?: extension.useJakartaAnnotations
 
     init {
         group = "assertj"
@@ -154,11 +171,21 @@ open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
         }
         val classLoader = URLClassLoader(classPath.map { it.toURI().toURL() }.toTypedArray())
         val classes = ClassUtil.collectClasses(classLoader, *classOrPackageNames!!)
+            .filterNot {
+                excludes!!.any { exclude ->
+                    exclude.toRegex().containsMatchIn(it.rawType.name)
+                }
+            }
             .filterNot { it.rawType.isSynthetic }
 
         val classDescriptions = classes.map { descriptionConverter.convertToClassDescription(it) }.toSet()
         val generatedAssertions = classDescriptions.map { assertionGenerator.generateCustomAssertionFor(it) }.toSet()
-
+        if (useJakartaAnnotations!!) {
+            generatedAssertions.forEach {
+                val fixedSource = it.readText().replace("@javax.annotation.Generated", "@jakarta.annotation.Generated")
+                it.writeText(fixedSource)
+            }
+        }
         val entryPoints =
             if (generatedAssertions.isEmpty())
                 emptySet<File>()

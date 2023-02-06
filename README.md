@@ -33,6 +33,8 @@ type `com.github.fhermansson.gradle.assertj.plugin.GenerateAssertions`.
 |entryPointTypes|AssertionsEntryPointType[]|['STANDARD']|Types of entry point classes to generate. Possible values: 'STANDARD', 'SOFT', 'BDD', 'JUNIT_SOFT', 'BDD_SOFT', 'JUNIT_BDD_SOFT', 'AUTO_CLOSEABLE_SOFT', 'AUTO_CLOSEABLE_BDD_SOFT'|
 |entryPointInherits|boolean|true|Entry point classes [inherit](http://joel-costigliola.github.io/assertj/assertj-core-custom-assertions.html#single-assertion-entry-point) from core Assertj classes|
 |cleanOutputDir|boolean|true|Remove all files in `outputDir` before generating assertions.|
+|excludes|String[]|[]|Regexes for classes to be excluded|
+|useJakartaAnnotations|boolean|false|Use @jakarta.annotation.Generated instead of @javax.annotation.Generated|
 
 
 ##### How to create additional tasks

@@ -48,4 +48,14 @@ open class AssertjGeneratorExtension(project: Project) {
      * Clean output directory before generating assertions.
      */
     var cleanOutputDir: Boolean = true
+
+    /**
+     * Regexes for classes to be excluded
+     */
+    var excludes: Array<String> = emptyArray()
+
+    /**
+     * Use @jakarta.annotation.Generated instead of @javax.annotation.Generated
+     */
+    var useJakartaAnnotations = false
 }
