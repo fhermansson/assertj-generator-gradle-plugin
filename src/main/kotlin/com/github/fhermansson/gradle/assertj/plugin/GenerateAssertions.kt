@@ -21,7 +21,6 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import java.io.File
 import java.net.URLClassLoader
-import kotlin.math.log
 
 open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
 
