@@ -9,7 +9,7 @@ Gradle version >= 7.1
 #### Configuration
 ```groovy
 plugins {
-  id "com.github.fhermansson.assertj-generator" version "1.1.3"
+  id "com.github.fhermansson.assertj-generator" version "1.1.4"
 }
 
 assertjGenerator {
