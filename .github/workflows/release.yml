@@ -16,15 +16,15 @@ jobs:
     environment: release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # axion reads full history to derive the version from tags
           fetch-depth: 0
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       # The tag is the source of truth for what gets published: fail early if
       # the tag and the version axion derives from it disagree.
