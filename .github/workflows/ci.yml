@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        # wrapper = the checked-in wrapper distribution; 8.14.5 = oldest supported
+        # Gradle line; current = latest stable release (rolls forward to the next
+        # major automatically, which is the point: this leg is the early warning
+        # for Gradle 10 compatibility).
+        gradle: [wrapper, 8.14.5, current]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ matrix.gradle }}
+      - name: Build with all warnings surfaced
+        # With an installed version on PATH, `gradle` uses it; the wrapper leg
+        # exercises the checked-in distribution via ./gradlew.
+        run: |
+          if [ "${{ matrix.gradle }}" = "wrapper" ]; then
+            ./gradlew build --warning-mode=all
+          else
+            gradle build --warning-mode=all
+          fi
