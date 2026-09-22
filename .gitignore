@@ -20,3 +20,9 @@ gradle-app.setting
 *.iws
 *.iml
 out
+bin
+.kotlin
+
+ISSUE-REPLIES-DRAFT.md
+RELEASE-NOTES-2.0.0-DRAFT.md
+PLAN.md
