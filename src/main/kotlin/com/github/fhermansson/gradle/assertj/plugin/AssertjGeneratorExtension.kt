@@ -1,61 +1,61 @@
 package com.github.fhermansson.gradle.assertj.plugin
 
 import org.assertj.assertions.generator.AssertionsEntryPointType
-import org.gradle.api.Project
-import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.SourceSet
 
-open class AssertjGeneratorExtension(project: Project) {
+abstract class AssertjGeneratorExtension {
     /**
      * Classes and packages to generate assertions for.
      */
-    var classOrPackageNames: Array<String> = emptyArray()
+    abstract val classOrPackageNames: ListProperty<String>
 
     /**
      * The sourceSet containing classes to generate assertions for.
      */
-    var sourceSet: SourceSet = project.extensions.getByType(JavaPluginExtension::class.java)
-        .sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME)
+    abstract val sourceSet: Property<SourceSet>
 
     /**
      * The target sourceSet for generated assertions.
      */
-    var testSourceSet: SourceSet = project.extensions.getByType(JavaPluginExtension::class.java)
-        .sourceSets.getByName(SourceSet.TEST_SOURCE_SET_NAME)
+    abstract val testSourceSet: Property<SourceSet>
 
     /**
-     * Destination package for entry point classes. The generator will choose if null.
+     * Destination package for entry point classes. The generator will choose if unset.
      */
-    var entryPointPackage: String? = null
+    abstract val entryPointPackage: Property<String>
 
     /**
-     * Output directory for generated classes.
-     * Any type accepted by Project.file(Object).
+     * Output directory for generated classes. Defaults to
+     * [buildDirectory]/generated/sources/assertj/[testSourceSet.name].
      */
-    var outputDir: Any? = null
+    abstract val outputDir: DirectoryProperty
 
     /**
      * What kinds of entry point classes to generate.
      */
-    var entryPointTypes: Array<AssertionsEntryPointType> = arrayOf(AssertionsEntryPointType.STANDARD)
+    abstract val entryPointTypes: SetProperty<AssertionsEntryPointType>
 
     /**
      * Entry point classes inherit from core Assertj classes
      */
-    var entryPointInherits = true
+    abstract val entryPointInherits: Property<Boolean>
 
     /**
      * Clean output directory before generating assertions.
      */
-    var cleanOutputDir: Boolean = true
+    abstract val cleanOutputDir: Property<Boolean>
+
+    /**
+     * Generate assertions for non-public fields and properties as well.
+     */
+    abstract val generateForNonPublicFields: Property<Boolean>
 
     /**
      * Regexes for classes to be excluded
      */
-    var excludes: Array<String> = emptyArray()
-
-    /**
-     * Use @jakarta.annotation.Generated instead of @javax.annotation.Generated
-     */
-    var useJakartaAnnotations = false
+    abstract val excludes: ListProperty<String>
 }

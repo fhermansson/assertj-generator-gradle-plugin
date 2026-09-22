@@ -6,10 +6,12 @@ import org.assertj.assertions.generator.Template
 import org.assertj.assertions.generator.description.converter.ClassToClassDescriptionConverter
 import org.assertj.assertions.generator.util.ClassUtil
 import org.gradle.api.DefaultTask
-import org.gradle.api.Project
-import org.gradle.api.ProjectEvaluationListener
-import org.gradle.api.ProjectState
-import org.gradle.api.file.FileCollection
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.SetProperty
+import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.CompileClasspath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
@@ -18,184 +20,194 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.TaskAction
-import org.gradle.plugins.ide.idea.model.IdeaModel
 import java.io.File
 import java.net.URLClassLoader
+import kotlin.jvm.Transient
 
-open class GenerateAssertions : DefaultTask(), ProjectEvaluationListener {
+@CacheableTask
+abstract class GenerateAssertions : DefaultTask() {
+    /**
+     * Classes and packages to generate assertions for.
+     */
+    @get:Input
+    abstract val classOrPackageNames: ListProperty<String>
 
-    private val extension: AssertjGeneratorExtension by lazy {
-        project.extensions.getByType(AssertjGeneratorExtension::class.java)
-    }
+    /**
+     * The sourceSet containing classes to generate assertions for.
+     * Stored as a plain field: SourceSet is not configuration-cache serializable, so it
+     * is only read during configuration (transient to keep the cache entry clean).
+     */
+    @Transient
+    private var sourceSetField: SourceSet? = null
 
-    val classPath: FileCollection
-        @InputFiles
-        @CompileClasspath
-        get() = sourceSet!!.runtimeClasspath
+    var sourceSet: SourceSet?
+        @Internal
+        get() = sourceSetField ?: extension().sourceSet.getOrNull()
+        set(value) {
+            sourceSetField = value
+        }
+
+    /**
+     * The target sourceSet for generated assertions.
+     * Stored as a plain field: SourceSet is not configuration-cache serializable, so it
+     * is only read during configuration (transient to keep the cache entry clean).
+     */
+    @Transient
+    private var testSourceSetField: SourceSet? = null
+
+    var testSourceSet: SourceSet?
+        @Internal
+        get() = testSourceSetField ?: extension().testSourceSet.getOrNull()
+        set(value) {
+            testSourceSetField = value
+        }
+
+    /**
+     * Destination package for entry point classes. The generator will choose if unset.
+     */
+    @get:Input
+    @get:Optional
+    abstract val entryPointPackage: Property<String>
+
+    /**
+     * Output directory for generated classes. Defaults to
+     * [buildDirectory]/generated/sources/assertj/[testSourceSet.name].
+     */
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
 
     /**
      * What kinds of entry point classes to generate.
      */
-    var entryPointTypes: Array<AssertionsEntryPointType>? = null
-        @Internal
-        get() = field ?: extension.entryPointTypes
-
-    val entryPointTypesAsSet
-        @Input
-        get() = entryPointTypes!!.toSet()
-
-    /**
-     * Output directory for generated classes.
-     * Any type accepted by Project.file(Object).
-     */
-    var outputDir: Any? = null
-        @Internal
-        get() = field ?: extension.outputDir ?: "src/${testSourceSet!!.name}/generated-java"
-
-    val resolvedOutputDir: File
-        @OutputDirectory
-        get() = project.file(outputDir!!)
-
-    /**
-     * The sourceSet containing classes to generate assertions for.
-     */
-    var sourceSet: SourceSet? = null
-        @Internal
-        get() = field ?: extension.sourceSet
-
-    /**
-     * The target sourceSet for generated assertions.
-     */
-    var testSourceSet: SourceSet? = null
-        @Internal
-        get() = field ?: extension.testSourceSet
-
-    /**
-     * Destination package for entry point classes. The generator will choose if null.
-     */
-    var entryPointPackage: String? = null
-        @Input
-        @Optional
-        get() = field ?: extension.entryPointPackage
+    @get:Input
+    abstract val entryPointTypes: SetProperty<AssertionsEntryPointType>
 
     /**
      * Entry point classes inherit from core Assertj classes
      */
-    var entryPointInherits: Boolean? = null
-        @Input
-        get() = field ?: extension.entryPointInherits
-
-    /**
-     * Classes and packages to generate assertions for.
-     */
-    var classOrPackageNames: Array<String>? = null
-        @Input
-        get() = field ?: extension.classOrPackageNames
+    @get:Input
+    abstract val entryPointInherits: Property<Boolean>
 
     /**
      * Clean output directory before generating assertions.
      */
-    var cleanOutputDir: Boolean? = null
-        @Input
-        get() = field ?: extension.cleanOutputDir
+    @get:Input
+    abstract val cleanOutputDir: Property<Boolean>
+
+    /**
+     * Generate assertions for non-public fields and properties as well.
+     */
+    @get:Input
+    abstract val generateForNonPublicFields: Property<Boolean>
 
     /**
      * Regexes for classes to be excluded
      */
-    var excludes: Array<String>? = null
-        @Input
-        get() = field ?: extension.excludes
+    @get:Input
+    abstract val excludes: ListProperty<String>
 
     /**
-     * Use @jakarta.annotation.Generated instead of @javax.annotation.Generated
+     * The runtime classpath of [sourceSet], used to load the classes to generate
+     * assertions for. Populated by the plugin during wiring.
      */
-    var useJakartaAnnotations: Boolean? = null
-        @Input
-        get() = field ?: extension.useJakartaAnnotations
+    @get:InputFiles
+    @get:CompileClasspath
+    abstract val classPath: ConfigurableFileCollection
 
     init {
         group = "assertj"
         description = "Generate Assertj Assertions"
-        project.gradle.addProjectEvaluationListener(this)
     }
+
+    private fun extension(): AssertjGeneratorExtension = project.extensions.getByType(AssertjGeneratorExtension::class.java)
 
     private fun getTemplate(entryPointType: AssertionsEntryPointType): Template {
-        val templateType = when (entryPointType) {
-            AssertionsEntryPointType.STANDARD -> Template.Type.ASSERTIONS_ENTRY_POINT_CLASS
-            AssertionsEntryPointType.BDD -> Template.Type.BDD_ASSERTIONS_ENTRY_POINT_CLASS
-            AssertionsEntryPointType.SOFT -> Template.Type.SOFT_ASSERTIONS_ENTRY_POINT_CLASS
-            AssertionsEntryPointType.JUNIT_SOFT -> Template.Type.JUNIT_SOFT_ASSERTIONS_ENTRY_POINT_CLASS
-            AssertionsEntryPointType.BDD_SOFT -> Template.Type.BDD_SOFT_ASSERTIONS_ENTRY_POINT_CLASS
-            AssertionsEntryPointType.JUNIT_BDD_SOFT -> Template.Type.JUNIT_BDD_SOFT_ASSERTIONS_ENTRY_POINT_CLASS
-            AssertionsEntryPointType.AUTO_CLOSEABLE_SOFT -> Template.Type.AUTO_CLOSEABLE_SOFT_ASSERTIONS_ENTRY_POINT_CLASS
-            AssertionsEntryPointType.AUTO_CLOSEABLE_BDD_SOFT -> Template.Type.AUTO_CLOSEABLE_BDD_SOFT_ASSERTIONS_ENTRY_POINT_CLASS
-        }
-
-        val fileName = "${entryPointType.name.toLowerCase()}_assertions_entry_point_class.txt"
-        val templateContent = this.javaClass.classLoader.getResource(fileName)?.readText()
-            ?: throw RuntimeException("Error locating resource $fileName!")
-        return Template(templateType, templateContent)
-    }
-
-    override fun afterEvaluate(project: Project, state: ProjectState) {
-        if (project == this.project) {
-            val sourceClassesTaskName = sourceSet!!.classesTaskName
-            dependsOn.add(sourceClassesTaskName)
-            testSourceSet!!.java.srcDir(resolvedOutputDir)
-            listOf("java", "kotlin", "groovy").forEach { lang ->
-                project.getTasksByName(testSourceSet!!.getCompileTaskName(lang), false).forEach {
-                    it.dependsOn(this)
-                }
+        val templateType =
+            when (entryPointType) {
+                AssertionsEntryPointType.STANDARD -> Template.Type.ASSERTIONS_ENTRY_POINT_CLASS
+                AssertionsEntryPointType.BDD -> Template.Type.BDD_ASSERTIONS_ENTRY_POINT_CLASS
+                AssertionsEntryPointType.SOFT -> Template.Type.SOFT_ASSERTIONS_ENTRY_POINT_CLASS
+                AssertionsEntryPointType.JUNIT_SOFT -> Template.Type.JUNIT_SOFT_ASSERTIONS_ENTRY_POINT_CLASS
+                AssertionsEntryPointType.BDD_SOFT -> Template.Type.BDD_SOFT_ASSERTIONS_ENTRY_POINT_CLASS
+                AssertionsEntryPointType.JUNIT_BDD_SOFT -> Template.Type.JUNIT_BDD_SOFT_ASSERTIONS_ENTRY_POINT_CLASS
+                AssertionsEntryPointType.AUTO_CLOSEABLE_SOFT -> Template.Type.AUTO_CLOSEABLE_SOFT_ASSERTIONS_ENTRY_POINT_CLASS
+                AssertionsEntryPointType.AUTO_CLOSEABLE_BDD_SOFT -> Template.Type.AUTO_CLOSEABLE_BDD_SOFT_ASSERTIONS_ENTRY_POINT_CLASS
             }
-            project.extensions.findByType(IdeaModel::class.java)
-                ?.module?.generatedSourceDirs?.add(resolvedOutputDir)
-        }
-    }
 
-    override fun beforeEvaluate(project: Project) {
+        val fileName = "${entryPointType.name.lowercase()}_assertions_entry_point_class.txt"
+        val templateContent =
+            this.javaClass.classLoader
+                .getResource(fileName)
+                ?.readText()
+                ?: throw RuntimeException("Error locating resource $fileName!")
+        return Template(templateType, templateContent)
     }
 
     @TaskAction
     fun generateAssertions() {
-        if (cleanOutputDir!!) {
-            project.delete(resolvedOutputDir)
+        val outDir = outputDir.get().asFile
+        if (cleanOutputDir.get()) {
+            outDir.deleteRecursively()
         }
         val descriptionConverter = ClassToClassDescriptionConverter()
         val assertionGenerator = BaseAssertionGenerator()
-        assertionGenerator.setDirectoryWhereAssertionFilesAreGenerated(resolvedOutputDir)
-        if (entryPointInherits!!) {
-            entryPointTypesAsSet.forEach {
+        if (generateForNonPublicFields.get()) {
+            assertionGenerator.setGenerateAssertionsForAllFields(true)
+        }
+        assertionGenerator.setDirectoryWhereAssertionFilesAreGenerated(outDir)
+        if (entryPointInherits.get()) {
+            entryPointTypes.get().forEach {
                 assertionGenerator.register(getTemplate(it))
             }
         }
         val classLoader = URLClassLoader(classPath.map { it.toURI().toURL() }.toTypedArray())
-        val classes = ClassUtil.collectClasses(classLoader, *classOrPackageNames!!)
-            .filterNot {
-                excludes!!.any { exclude ->
-                    exclude.toRegex().containsMatchIn(it.rawType.name)
-                }
+        /*
+         * e.g. Kotlin enums link against kotlin.enums.EnumEntries from the classpath.
+         * Class collection and description conversion must run inside the loader's
+         * lifetime — after use {} the loader is closed and later reflection over the
+         * loaded classes would fail with NoClassDefFoundError. Generation itself only
+         * reads the converted descriptions and is safe to run after the loader closes.
+         */
+        val classDescriptions =
+            classLoader.use {
+                ClassUtil
+                    .collectClasses(classLoader, *classOrPackageNames.get().toTypedArray())
+                    .filterNot { classDescription ->
+                        excludes.get().any { exclude ->
+                            exclude.toRegex().containsMatchIn(classDescription.rawType.name)
+                        }
+                    }.filterNot { it.rawType.isSynthetic }
+                    .map { descriptionConverter.convertToClassDescription(it) }
+                    .toSet()
             }
-            .filterNot { it.rawType.isSynthetic }
 
-        val classDescriptions = classes.map { descriptionConverter.convertToClassDescription(it) }.toSet()
+        /*
+         * The generator emits @javax.annotation.Generated, which no JDK ships since 11
+         * and no modern stack carries; rewrite to the Jakarta namespace unconditionally.
+         */
         val generatedAssertions = classDescriptions.map { assertionGenerator.generateCustomAssertionFor(it) }.toSet()
-        if (useJakartaAnnotations!!) {
-            generatedAssertions.forEach {
-                val fixedSource = it.readText().replace("@javax.annotation.Generated", "@jakarta.annotation.Generated")
-                it.writeText(fixedSource)
-            }
+        generatedAssertions.forEach {
+            val fixedSource = it.readText().replace("@javax.annotation.Generated", "@jakarta.annotation.Generated")
+            it.writeText(fixedSource)
         }
         val entryPoints =
-            if (generatedAssertions.isEmpty())
+            if (generatedAssertions.isEmpty()) {
                 emptySet<File>()
-            else
-                entryPointTypesAsSet.map {
-                    assertionGenerator.generateAssertionsEntryPointClassFor(classDescriptions, it, entryPointPackage)
-                }.toSet()
+            } else {
+                entryPointTypes
+                    .get()
+                    .map {
+                        assertionGenerator.generateAssertionsEntryPointClassFor(
+                            classDescriptions,
+                            it,
+                            entryPointPackage.orNull,
+                        )
+                    }.toSet()
+            }
 
-        logger.lifecycle(
+        logger.debug(
             "Generated ${generatedAssertions.size} assertion classes, " +
-                "${entryPoints.size} entry point classes in $resolvedOutputDir"
+                "${entryPoints.size} entry point classes in $outDir",
         )
     }
 }
