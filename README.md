@@ -10,7 +10,7 @@ and generated sources are added to the test source set automatically.
 
 #### Requirements
 
-- Gradle 8.0 or newer, tested 8.0–9.x (users on Gradle 7.x should stay on plugin version 1.1.5)
+- Gradle 8.5 or newer, tested 8.5–9.x (users on Gradle 7.x–8.4 should stay on plugin version 1.1.5)
 - `jakarta.annotation:jakarta.annotation-api` on the test compile classpath, or a stack
   that includes it (e.g. Spring Boot 3+). See [Generated annotations](#generated-annotations).
 
@@ -32,6 +32,10 @@ assertjGenerator {
   classOrPackageNames = ['com.example.model']
 }
 ```
+
+Use any assertj-core version you like in your tests — the version the plugin uses
+internally (for generation only) is an implementation detail and does not constrain
+yours. Generated assertions compile against your test classpath.
 
 Run `./gradlew test` — assertions are generated, compiled, and available via the generated
 entry points, e.g. `import static com.example.model.Assertions.assertThat;`.
@@ -66,8 +70,9 @@ All properties support `=` assignment in both Groovy and Kotlin DSL.
 
 #### Multiple source sets
 
-For each additional source set, register an extra task. It inherits unset values from
-the `assertjGenerator` extension:
+For each additional source set, register an extra task. Properties you set on the task
+win; unset task properties fall back to the `assertjGenerator` extension, and to plugin
+defaults if the extension does not set them either:
 
 ```groovy
 import com.github.fhermansson.gradle.assertj.plugin.GenerateAssertions
