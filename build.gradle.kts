@@ -1,7 +1,10 @@
+import org.gradle.plugin.compatibility.compatibility
+
 plugins {
     `kotlin-dsl`
     id("com.gradle.plugin-publish") version "2.2.1"
     id("maven-publish")
+    id("org.gradle.plugin-compatibility") version "1.1.0"
     id("org.jmailen.kotlinter") version "5.7.0"
     id("pl.allegro.tech.build.axion-release") version "1.21.4"
 }
@@ -48,6 +51,13 @@ gradlePlugin {
             displayName = "Assertj Generator plugin"
             description = "Generate Assertj assertion classes."
             tags = listOf("code-generation", "assertj", "java")
+            compatibility {
+                features {
+                    // Verified by the functional suite: CC store/reuse test and
+                    // FROM-CACHE build cache test.
+                    configurationCache = true
+                }
+            }
         }
     }
 }
