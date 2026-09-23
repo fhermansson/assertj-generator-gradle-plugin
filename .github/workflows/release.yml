@@ -29,9 +29,11 @@ jobs:
       # The tag is the source of truth for what gets published: fail early if
       # the tag and the version axion derives from it disagree.
       - name: Verify tag matches derived version
+        # currentVersion prints "Project version: <version>" (plus a leading
+        # blank line) even with -q, so extract the bare version.
         run: |
           TAG_VERSION="${GITHUB_REF_NAME#v}"
-          DERIVED_VERSION="$(./gradlew -q currentVersion)"
+          DERIVED_VERSION="$(./gradlew -q currentVersion | grep -oE '[0-9]+[^ ]*$')"
           if [ "$TAG_VERSION" != "$DERIVED_VERSION" ]; then
             echo "Tag v$TAG_VERSION does not match derived version $DERIVED_VERSION" >&2
             exit 1
