@@ -10,11 +10,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # wrapper = the checked-in wrapper distribution; 8.14.5 = oldest supported
-        # Gradle line; current = latest stable release (rolls forward to the next
-        # major automatically, which is the point: this leg is the early warning
-        # for Gradle 10 compatibility).
-        gradle: [wrapper, 8.14.5, current]
+        # wrapper = the checked-in wrapper distribution; 8.5 = oldest Gradle that
+        # can build this repo (kotlinter 5.7 metadata needs Gradle >= 8.5; consumers
+        # can go lower — see README); current = latest stable release (rolls forward
+        # to the next major automatically, which is the point: this leg is the early
+        # warning for Gradle 10 compatibility).
+        gradle: [wrapper, 8.5, current]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

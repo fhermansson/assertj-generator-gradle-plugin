@@ -10,7 +10,7 @@ and generated sources are added to the test source set automatically.
 
 #### Requirements
 
-- Gradle 8 or newer (users on Gradle 7.x should stay on plugin version 1.1.5)
+- Gradle 8.0 or newer, tested 8.0–9.x (users on Gradle 7.x should stay on plugin version 1.1.5)
 - `jakarta.annotation:jakarta.annotation-api` on the test compile classpath, or a stack
   that includes it (e.g. Spring Boot 3+). See [Generated annotations](#generated-annotations).
 
