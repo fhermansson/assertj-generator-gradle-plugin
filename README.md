@@ -18,7 +18,7 @@ and generated sources are added to the test source set automatically.
 
 ```groovy
 plugins {
-  id 'com.github.fhermansson.assertj-generator' version '2.0.0'
+  id 'com.github.fhermansson.assertj-generator' version '2.0.1'
 }
 
 repositories { mavenCentral() }
@@ -119,3 +119,8 @@ assertjGenerator {
 3. The extension now uses Gradle's lazy `Property` types. `=` assignment works in both
    Groovy and Kotlin DSL; list-typed properties changed from arrays to lists, and
    `outputDir` is now a `DirectoryProperty` that takes files or directory providers.
+4. If you have kotlinter lint/format workarounds for the generated directory
+   (`exclude { ... }` and `mustRunAfter`/`dependsOn` on `LintTask`/`FormatTask`),
+   remove them — they are no longer needed since 2.0.1: the generated sources
+   directory is wired as a task output provider, so consuming tasks carry the
+   dependency implicitly.
