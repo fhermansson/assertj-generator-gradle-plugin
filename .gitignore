@@ -20,3 +20,7 @@ gradle-app.setting
 *.iws
 *.iml
 out
+bin
+.kotlin
+
+
