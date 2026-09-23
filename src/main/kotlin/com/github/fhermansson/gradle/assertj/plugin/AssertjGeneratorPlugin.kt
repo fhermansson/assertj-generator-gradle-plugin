@@ -78,11 +78,12 @@ open class AssertjGeneratorPlugin : Plugin<Project> {
                 ),
             )
         }
-        val outDir = task.outputDir.get().asFile
-
         task.classPath.from(sourceSet.runtimeClasspath)
         task.dependsOn(sourceSet.classesTaskName)
-        testSourceSet.java.srcDir(outDir)
+        // Wire the generated directory as a task-output provider: any task that
+        // reads the source set (compile tasks, kotlinter lint/format, ...) then
+        // carries the producer dependency implicitly.
+        testSourceSet.java.srcDir(task.outputDir)
         listOf("java", "kotlin", "groovy").forEach { lang ->
             task.project.tasks
                 .matching { it.name == testSourceSet.getCompileTaskName(lang) }

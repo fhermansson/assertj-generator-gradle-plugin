@@ -97,6 +97,15 @@ tasks.register('generateTestFixturesAssertions', GenerateAssertions) {
 }
 ```
 
+#### Lint and format integration
+
+Tasks that read the test source set — kotlinter's `lintKotlin*`/`formatKotlin*`,
+compile tasks, or anything else consuming the generated directory — get the
+producer dependency on `generateAssertions` automatically. The generated sources
+directory is wired as a task output provider, so no `dependsOn`/`mustRunAfter`
+boilerplate or `exclude { ... }` filters are needed. Generated files are `.java`,
+which Kotlin lint/format tools ignore anyway.
+
 #### Upgrading from 1.x
 
 Three changes in 2.0.0:
